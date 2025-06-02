@@ -1,0 +1,482 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq8074.dtsi"
+#include "ipq8074-hk-cpu.dtsi"
+#include "ipq8074-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "TCL HH500V";
+	compatible = "tcl,hh500v", "qcom,ipq8074";
+
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_red;
+		serial0 = &blsp1_uart5;
+		/* Aliases as required by u-boot to patch MAC addresses */
+		ethernet3 = &dp4;
+		ethernet5 = &dp6;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "power";
+			gpios = <&tlmm 62 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		4g_green {
+			label = "green:4g";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		4g_blue {
+			label = "blue:4g";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_red {
+			label = "red:wifi";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 2 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_blue {
+			label = "blue:wifi";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_blue: power_blue {
+			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: power_red {
+			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 6 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_red {
+			label = "red:5g";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_green {
+			label = "green:5g";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&aw9523 9 GPIO_ACTIVE_LOW>;
+		};
+
+		5g_blue {
+			label = "blue:5g";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+		};
+
+		4g_red {
+			label = "red:4g";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&aw9523 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio68";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio69";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button-pins {
+		power_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio62";
+		};
+
+		reset_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio47";
+		};
+
+		wps_button {
+			bias-pull-up;
+			drive-strength = <8>;
+			function = "gpio";
+			pins = "gpio64";
+		};
+	};
+};
+
+&blsp1_i2c2 {
+	status = "okay";
+
+	aw9523: gpio-expander@91 {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <91>;
+		gpio-controller;
+		gpio-ranges = <&aw9523 0 0 16>;
+
+		led_pins: led-pins {
+			pins =
+				"gpio0", "gpio1", "gpio2", "gpio3", "gpio5", "gpio6",
+				"gpio8", "gpio9", "gpio10", "gpio11";
+			function = "gpio";
+			input-disable;
+			output-low;
+		};
+	};
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fixed-partitions";
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00 0x50000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "0:MIBIB";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x60000 0x20000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x80000 0x20000>;
+				read-only;
+			};
+
+			partition@a0000 {
+				label = "0:QSEE";
+				reg = <0xa0000 0x180000>;
+				read-only;
+			};
+
+			partition@220000 {
+				label = "0:QSEE_1";
+				reg = <0x220000 0x180000>;
+				read-only;
+			};
+
+			partition@3a0000 {
+				label = "0:DEVCFG";
+				reg = <0x3a0000 0x10000>;
+				read-only;
+			};
+
+			partition@3b0000 {
+				label = "0:DEVCFG_1";
+				reg = <0x3b0000 0x10000>;
+				read-only;
+			};
+
+			partition@3c0000 {
+				label = "0:APDP";
+				reg = <0x3c0000 0x10000>;
+				read-only;
+			};
+
+			partition@3d0000 {
+				label = "0:APDP_1";
+				reg = <0x3d0000 0x10000>;
+				read-only;
+			};
+
+			partition@3e0000 {
+				label = "0:RPM";
+				reg = <0x3e0000 0x40000>;
+				read-only;
+			};
+
+			partition@420000 {
+				label = "0:RPM_1";
+				reg = <0x420000 0x40000>;
+				read-only;
+			};
+
+			partition@460000 {
+				label = "0:CDT";
+				reg = <0x460000 0x10000>;
+				read-only;
+			};
+
+			partition@470000 {
+				label = "0:CDT_1";
+				reg = <0x470000 0x10000>;
+				read-only;
+			};
+
+			partition@480000 {
+				label = "0:APPSBLENV";
+				reg = <0x480000 0x10000>;
+			};
+
+			partition@490000 {
+				label = "0:APPSBL";
+				reg = <0x490000 0xa0000>;
+				read-only;
+			};
+
+			partition@530000 {
+				label = "0:APPSBL_1";
+				reg = <0x530000 0xa0000>;
+				read-only;
+			};
+
+			partition@5d0000 {
+				label = "0:ART";
+				reg = <0x5d0000 0x60000>;
+				read-only;
+			};
+
+			partition@630000 {
+				label = "0:ETHPHYFW";
+				reg = <0x630000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&blsp1_uart3 {
+	status = "okay";
+};
+
+&blsp1_uart5 {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <4>;
+		reg = <0>;
+
+		partitions {
+			partition@0 {
+				label = "rootfs";
+				reg = <0x00 0x7000000>;
+			};
+
+			partition@7000000 {
+				label = "0:WIFIFW";
+				reg = <0x7000000 0x800000>;
+				read-only;
+			};
+
+			partition@7800000 {
+				label = "rootfs_1";
+				reg = <0x7800000 0x7000000>;
+			};
+
+			partition@e800000 {
+				label = "0:WIFIFW_1";
+				reg = <0xe800000 0x800000>;
+				read-only;
+			};
+		};
+	};
+
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&ssphy_1 {
+	status = "okay";
+};
+
+&usb_0 {
+	status = "okay";
+};
+
+&usb_1 {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
+
+	qca8075_3: ethernet-phy@4 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <3>;
+	};
+
+	qca8081_28: ethernet-phy@28 {
+		compatible = "ethernet-phy-id004d.d101";
+		reg = <28>;
+		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+	switch_wan_bmp = <ESS_PORT6>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+			port@0 {
+				phy_address = <0>;
+				port_id = <1>;
+			};
+
+			port@1 {
+				phy_address = <1>;
+				port_id = <2>;
+			};
+
+			port@2 {
+				phy_address = <2>;
+				port_id = <3>;
+			};
+
+			port@3 {
+				phy_address = <3>;
+				port_id = <4>;
+			};
+
+			port@4 {
+				phy_address = <4>;
+				port_id = <5>;
+			};
+
+			port@5 {
+				phy_address = <28>;
+				port_id = <6>;
+				port_mac_sel = "QGMAC_PORT";
+			};
+		};
+
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp4 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&qca8075_3>;
+	label = "lan";
+};
+
+&dp6_syn {
+	status = "okay";
+	//phy-mode = "qsgmii";
+	phy-handle = <&qca8081_28>;
+	label = "wan";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "TCL-HH500V";
+};
