@@ -338,6 +338,10 @@
 &qpic_nand {
 	status = "okay";
 
+	partitions {
+		status = "disabled";
+	};
+
 	nand@0 {
 		nand-bus-width = <8>;
 		nand-ecc-step-size = <512>;
