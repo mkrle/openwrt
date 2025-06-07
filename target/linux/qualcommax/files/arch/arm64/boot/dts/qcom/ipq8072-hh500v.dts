@@ -18,7 +18,8 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_blue;
 		led-upgrade = &led_power_red;
-		serial0 = &blsp1_uart5;
+		serial0 = &blsp1_uart3;
+		serial1 = &blsp1_uart5;
 		/* Aliases as required by u-boot to patch MAC addresses */
 		ethernet3 = &dp4;
 		ethernet5 = &dp6;
@@ -338,6 +339,16 @@
 	//phy-mode = "qsgmii";
 	phy-handle = <&qca8081_28>;
 	label = "wan";
+};
+
+&pcie_qmp0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 58 GPIO_ACTIVE_HIGH>;
 };
 
 &wifi {
