@@ -401,6 +401,8 @@ define Device/tcl_hh500v
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk09
 	SOC := ipq8072
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 	DEVICE_PACKAGES := ipq-wifi-tcl_hh500v \
 		kmod-usb-serial-option uqmi
 endef
